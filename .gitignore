@@ -1,0 +1,33 @@
+# MI-EYE PRO — Core Perception & Streaming Engine
+
+# Dependencies
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# YOLO model weights (auto-downloaded, don't commit large binaries)
+*.pt
+*.onnx
+*.engine
+
+# Video files (too large for git)
+data/*.mp4
+data/*.avi
+data/*.mkv
+
+# Output (generated at runtime)
+output/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Ultralytics runs
+runs/

@@ -1,0 +1,7 @@
+# MI-EYE PRO — Core Perception & Streaming Engine
+# Pin major versions to avoid breaking changes across teammates' environments
+
+opencv-python>=4.8.0        # Video I/O, frame decoding, face crop extraction
+ultralytics>=8.2.0          # YOLOv8/v11 detection, tracking (ByteTrack/BoT-SORT), pose
+numpy>=1.24.0               # Array ops — OpenCV frames are numpy arrays
+onnxruntime-gpu>=1.16.0     # ONNX Runtime with CUDA EP for Stage 6 optimization
