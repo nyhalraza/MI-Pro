@@ -42,8 +42,11 @@ def check_gpu():
     try:
         import torch
         if torch.cuda.is_available():
-            device = torch.cuda.get_device_name(0)
-            vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+            props = torch.cuda.get_device_properties(0)
+            device = props.name
+            # PyTorch 2.11+ renamed total_mem -> total_memory
+            vram_bytes = getattr(props, 'total_memory', None) or getattr(props, 'total_mem', 0)
+            vram = vram_bytes / (1024**3)
             print(f"  GPU: {device} ({vram:.1f} GB VRAM)")
             print(f"  CUDA: {torch.version.cuda}")
             print(f"  PyTorch: {torch.__version__}")
