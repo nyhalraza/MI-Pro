@@ -3,19 +3,12 @@
 #
 # WHY BoT-SORT OVER ByteTrack:
 #   BoT-SORT adds a lightweight appearance re-identification (re-ID) model on
-#   top of ByteTrack's Kalman filter.  This means:
-#     - When a person is occluded (e.g. someone walks in front of the teacher),
-#       BoT-SORT remembers what they LOOK LIKE
-#     - When they reappear, BoT-SORT matches them by appearance features,
-#       not just by predicted position
-#     - Result: stable track IDs through occlusion events
+#   top of ByteTrack's Kalman filter.  When a person is occluded and reappears,
+#   BoT-SORT matches them by appearance features, not just predicted position.
 #
 # TRACK_BUFFER (150):
-#   How many frames a "lost" track survives before being deleted.
-#   Default is 30, which at sparse sampling (2-6 FPS on a 24fps source) means
-#   tracks die after ~1-3 seconds of occlusion.
-#   150 frames = ~6 seconds at 24fps source — enough for someone walking
-#   across the front of the classroom.
+#   Lost tracks survive 150 frames (~6 seconds at 24fps) before deletion.
+#   Default is 30 — too short for classroom occlusions.
 
 tracker_type: botsort
 
@@ -26,11 +19,12 @@ track_buffer: 150
 match_thresh: 0.8
 fuse_score: true
 
-# Camera Motion Compensation (CMC) — disabled for fixed classroom camera
+# Camera Motion Compensation — disabled for fixed classroom camera
 cmc_method: none
 
-# Re-ID appearance model — the key feature for handling occlusion
+# Re-ID appearance model
 with_reid: true
+model: auto
 proximity_thresh: 0.5
 appearance_thresh: 0.25
 
