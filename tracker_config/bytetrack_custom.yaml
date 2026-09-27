@@ -1,0 +1,17 @@
+# ByteTrack Custom Configuration for MI-EYE PRO (CPU fallback)
+# ──────────────────────────────────────────────
+#
+# Used when no GPU is available (Tier 3).  ByteTrack is motion-only (no re-ID)
+# so it has zero VRAM cost, but is more prone to ID switches during occlusion.
+#
+# TRACK_BUFFER (150):
+#   Extended from default 30 — gives lost tracks ~6 seconds to reappear.
+
+tracker_type: bytetrack
+
+track_high_thresh: 0.4
+track_low_thresh: 0.1
+new_track_thresh: 0.5
+track_buffer: 150
+match_thresh: 0.8
+fuse_score: true

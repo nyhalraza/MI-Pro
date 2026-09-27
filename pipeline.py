@@ -1,18 +1,22 @@
 """
 pipeline.py -- Main orchestrator for the MI-EYE PRO perception pipeline.
 
-This file grows with each stage:
+Stages:
     Stage 1: Ingest only                   [DONE]
     Stage 2: + Detection                   [DONE]
-    Stage 3: + Tracking                    [DONE]
-    Stage 4: + Pose estimation             [DONE]
-    Stage 5: + JSON serialization          [CURRENT]
-    Stage 6: + ONNX / FP16 optimization
+    Stage 3: + Tracking (BoT-SORT/ByteTrack) [DONE - upgraded to BoT-SORT]
+    Stage 4: + Pose estimation             [DONE - upgraded to full-frame]
+    Stage 5: + JSON serialization          [DONE]
+    Stage 6: + ONNX / FP16 optimization   [DONE]
 
-Each stage is a method that transforms the frame data, and run() chains them.
+v2 CHANGES:
+    - GPU auto-detection: model sizes adapt to available VRAM
+    - BoT-SORT: appearance re-ID for stable IDs through occlusion
+    - Full-frame pose: one inference call instead of N per-crop calls (3-5x faster)
+    - Higher FPS: 6 FPS (T4) / 4 FPS (1650) / 2 FPS (CPU)
 """
 
-import json
+import os
 import time
 
 import config
@@ -20,17 +24,12 @@ from video_ingest import VideoIngestor
 from tracker import TrackedDetector
 from pose_estimator import PoseEstimator
 from serializer import FrameSerializer
-from schemas import FrameResult, Track, Keypoint, KEYPOINT_NAMES
+from schemas import FrameResult, Track
 from utils import ensure_dir
 
 
 class PerceptionPipeline:
-    """Orchestrates the full perception pipeline:
-    ingest -> detect+track -> pose -> serialize to JSON.
-
-    Stage 5 adds JSON serialization: each processed frame is written to a
-    JSON file matching the frozen output contract.
-    """
+    """Orchestrates: ingest -> detect+track (BoT-SORT) -> pose (full-frame) -> JSON."""
 
     def __init__(
         self,
@@ -44,43 +43,45 @@ class PerceptionPipeline:
         self.session_id = session_id
         self.camera_id = camera_id
 
-        # Ensure output dirs exist
         ensure_dir(config.OUTPUT_DIR)
 
-        # ---- Stage 3: Tracked detector ----
+        # Print active configuration
+        print("=" * 60)
+        print("MI-EYE PRO -- Configuration")
+        print("=" * 60)
+        config.print_config()
+        print("=" * 60)
+
+        # Initialize tracked detector
         self.tracked_detector = TrackedDetector(
             model_name=config.MODEL_DETECT_NAME,
             tracker_config=config.TRACKER_CONFIG,
             conf_threshold=0.35,
         )
 
-        # ---- Stage 4: Pose estimator ----
+        # Initialize full-frame pose estimator
         self.pose_estimator = PoseEstimator(
             model_name=config.MODEL_POSE_NAME,
         )
 
-        # ---- Stage 5: JSON serializer ----
+        # Initialize JSON serializer
         self.serializer = FrameSerializer(
             output_dir=config.OUTPUT_DIR,
         )
 
     def run(self, max_frames: int = None):
-        """Run the pipeline over the video source.
+        """Run the full pipeline.
 
         Args:
-            max_frames: Stop after processing this many sampled frames (None = all).
+            max_frames: Stop after N sampled frames (None = process entire video).
         """
         ingestor = VideoIngestor(self.video_source, self.sample_fps)
         info = ingestor.info()
         print("=" * 60)
-        print("MI-EYE PRO -- Core Perception Pipeline (Stage 5: Full)")
+        print("MI-EYE PRO -- Pipeline Running")
         print("=" * 60)
         for k, v in info.items():
             print(f"  {k:>20s}: {v}")
-        print(f"  {'detection_model':>20s}: {config.MODEL_DETECT_NAME}")
-        print(f"  {'pose_model':>20s}: {config.MODEL_POSE_NAME}")
-        print(f"  {'tracker':>20s}: {config.TRACKER_CONFIG}")
-        print(f"  {'output_dir':>20s}: {config.OUTPUT_DIR}")
         print("=" * 60)
 
         processed = 0
@@ -90,13 +91,18 @@ class PerceptionPipeline:
         t_start = time.time()
 
         for frame_id, timestamp, frame in ingestor.frames():
-            # ---- Stage 3: Detection + Tracking ----
+            # ---- Detection + Tracking ----
             tracked_dets = self.tracked_detector.track(frame, persist=True)
 
-            # ---- Stage 4: Pose estimation per tracked person ----
+            # ---- Full-frame Pose Estimation ----
+            # Extract bboxes for batch pose matching
+            bboxes = [det["bbox"] for det in tracked_dets]
+            all_keypoints = self.pose_estimator.estimate_batch(frame, bboxes)
+
+            # ---- Assemble Track objects ----
             tracks = []
-            for det in tracked_dets:
-                keypoints = self.pose_estimator.estimate(frame, det["bbox"])
+            for i, det in enumerate(tracked_dets):
+                keypoints = all_keypoints[i]
                 kp_detected = sum(1 for kp in keypoints if kp.conf > 0)
                 total_keypoints_detected += kp_detected
 
@@ -111,7 +117,7 @@ class PerceptionPipeline:
                 tracks.append(track)
                 all_track_ids.add(det["track_id"])
 
-            # Build the frame result
+            # ---- Serialize to JSON ----
             result = FrameResult(
                 frame_id=frame_id,
                 frame_ts=timestamp,
@@ -119,13 +125,11 @@ class PerceptionPipeline:
                 camera_id=self.camera_id,
                 tracks=tracks,
             )
-
-            # ---- Stage 5: Serialize to JSON ----
             json_path = self.serializer.write(result)
 
             total_detections += len(tracks)
 
-            # Print summary
+            # ---- Log ----
             kp_summary = []
             for t in tracks:
                 kp_count = sum(1 for kp in t.keypoints if kp.conf > 0)
@@ -162,7 +166,3 @@ class PerceptionPipeline:
 
         ingestor.release()
         return processed
-
-
-# Need os for basename in the print statement
-import os

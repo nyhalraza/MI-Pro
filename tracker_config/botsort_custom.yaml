@@ -1,0 +1,38 @@
+# BoT-SORT Custom Configuration for MI-EYE PRO
+# ──────────────────────────────────────────────
+#
+# WHY BoT-SORT OVER ByteTrack:
+#   BoT-SORT adds a lightweight appearance re-identification (re-ID) model on
+#   top of ByteTrack's Kalman filter.  This means:
+#     - When a person is occluded (e.g. someone walks in front of the teacher),
+#       BoT-SORT remembers what they LOOK LIKE
+#     - When they reappear, BoT-SORT matches them by appearance features,
+#       not just by predicted position
+#     - Result: stable track IDs through occlusion events
+#
+# TRACK_BUFFER (150):
+#   How many frames a "lost" track survives before being deleted.
+#   Default is 30, which at sparse sampling (2-6 FPS on a 24fps source) means
+#   tracks die after ~1-3 seconds of occlusion.
+#   150 frames = ~6 seconds at 24fps source — enough for someone walking
+#   across the front of the classroom.
+
+tracker_type: botsort
+
+track_high_thresh: 0.4
+track_low_thresh: 0.1
+new_track_thresh: 0.5
+track_buffer: 150
+match_thresh: 0.8
+fuse_score: true
+
+# Camera Motion Compensation (CMC) — disabled for fixed classroom camera
+cmc_method: none
+
+# Re-ID appearance model — the key feature for handling occlusion
+with_reid: true
+proximity_thresh: 0.5
+appearance_thresh: 0.25
+
+# GMC method
+gmc_method: sparseOptFlow

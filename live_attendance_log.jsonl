@@ -1,0 +1,8 @@
+{"session_id": "live_1790540525", "track_id": 2, "identity_id": "student_0001", "identity_name": "s1", "arid_no": "2026-ARID-1226", "role": "student", "match_confidence": 0.7543, "resolved_ts": 1790540526.171}
+{"session_id": "live_1790540525", "track_id": 10, "identity_id": "student_0002", "identity_name": "s2", "arid_no": "2026-ARID-1482", "role": "student", "match_confidence": 0.754, "resolved_ts": 1790540526.173}
+{"session_id": "live_1790540804", "track_id": 2, "identity_id": "student_0001", "identity_name": "s1", "arid_no": "2026-ARID-7307", "role": "student", "match_confidence": 0.6624, "resolved_ts": 1790540805.432}
+{"session_id": "live_1790540804", "track_id": 10, "identity_id": "student_0002", "identity_name": "s2", "arid_no": "2026-ARID-3408", "role": "student", "match_confidence": 0.5572, "resolved_ts": 1790540805.435}
+{"session_id": "live_1790540804", "track_id": 6, "identity_id": "student_0004", "identity_name": "s4", "arid_no": "2026-ARID-4668", "role": "student", "match_confidence": 0.5564, "resolved_ts": 1790540814.257}
+{"session_id": "live_1790540936", "track_id": 2, "identity_id": "student_0001", "identity_name": "s1", "arid_no": "2026-ARID-8651", "role": "student", "match_confidence": 0.6464, "resolved_ts": 1790540936.958}
+{"session_id": "live_1790540936", "track_id": 10, "identity_id": "student_0002", "identity_name": "s2", "arid_no": "2026-ARID-8722", "role": "student", "match_confidence": 0.5736, "resolved_ts": 1790540936.96}
+{"session_id": "live_1790540936", "track_id": 6, "identity_id": "student_0004", "identity_name": "s4", "arid_no": "2026-ARID-9777", "role": "student", "match_confidence": 0.5555, "resolved_ts": 1790540941.05}
