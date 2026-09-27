@@ -8,6 +8,7 @@ Usage:
     python run.py --fps 1.0                 # Override sample rate
 """
 
+import os
 import argparse
 import config
 from pipeline import PerceptionPipeline
@@ -47,6 +48,11 @@ def main():
         default=config.CAMERA_ID,
         help="Camera identifier embedded in JSON output",
     )
+    parser.add_argument(
+        "--visualize",
+        action="store_true",
+        help="Automatically render annotated video after pipeline finishes",
+    )
 
     args = parser.parse_args()
 
@@ -58,6 +64,23 @@ def main():
     )
 
     pipeline.run(max_frames=args.max_frames)
+
+    if args.visualize:
+        import visualize_output
+        print("\n[Visualizer] Generating annotated video...")
+        out_vid = os.path.join(config.OUTPUT_DIR, "annotated_output.mp4")
+        # Set up args programmatically
+        import sys
+        orig_argv = sys.argv
+        sys.argv = [
+            "visualize_output.py",
+            "--video", args.video,
+            "--json_dir", config.OUTPUT_DIR,
+            "--out", out_vid,
+            "--sample_fps", str(args.fps),
+        ]
+        visualize_output.main()
+        sys.argv = orig_argv
 
 
 if __name__ == "__main__":
